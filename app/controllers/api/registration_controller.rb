@@ -4,6 +4,7 @@ class Api::RegistrationController < ApplicationController
   def create_user
     begin
       create_params = user_params
+      raise ActiveRecord::RecordNotUnique unless User.find_by(email: create_params[:email]).nil?
 
       user = User.create!(create_params)
 
@@ -12,7 +13,9 @@ class Api::RegistrationController < ApplicationController
 
       render json: { email: user.email, token: user.token, user_id: user.id }
     rescue => e
-      if e.is_a? ActiveRecord::RecordInvalid
+      if e.is_a? ActiveRecord::RecordNotUnique
+        render json: { error: 'User already exists with given email' }, status: :forbidden
+      elsif e.is_a? ActiveRecord::RecordInvalid
         render json: { error: 'You must give valid email and password with minimum length of 6 characters' }, status: :forbidden
       else
         render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
@@ -27,6 +30,6 @@ class Api::RegistrationController < ApplicationController
     params.permit(:email, :password, :password_confirmation).to_unsafe_h.map do |key, value|
       transformed_params[key] = key == 'email' ? value.downcase : value
     end
-    transformed_params
+    transformed_params.symbolize_keys!
   end
 end

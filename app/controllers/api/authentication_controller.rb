@@ -3,10 +3,12 @@ class Api::AuthenticationController < ApplicationController
 
   def authenticate
     begin
-      command = AuthenticateUser.call(params[:email], params[:password])
-  
+      auth_params = user_params
+      command = AuthenticateUser.call(auth_params[:email], password: auth_params[:password])
+      
       if command.success?
-        user = User.find_by(email: params[:email])
+        p "EMAIL: <<<<< #{command.result}"
+        user = User.find_by(email: auth_params[:email])
         user.update!(token: command.result) if command.result != user.token
         render json: { email: user.email, auth_token: user.token, user_id: user.id }
       else
@@ -19,5 +21,16 @@ class Api::AuthenticationController < ApplicationController
         render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
       end
     end
+  end
+
+  private
+  def user_params
+    transformed_params = {}
+
+    params.permit(:email, :password).to_unsafe_h.map do |key, value|
+      transformed_params[key] = key == 'email' ? value.downcase : value
+    end
+
+    transformed_params.symbolize_keys!
   end
 end
