@@ -4,10 +4,9 @@ class Api::AuthenticationController < ApplicationController
   def authenticate
     begin
       auth_params = user_params
-      command = AuthenticateUser.call(auth_params[:email], password: auth_params[:password])
+      command = AuthenticateUser.call(auth_params[:email], auth_params[:password])
       
       if command.success?
-        p "EMAIL: <<<<< #{command.result}"
         user = User.find_by(email: auth_params[:email])
         user.update!(token: command.result) if command.result != user.token
         render json: { email: user.email, auth_token: user.token, user_id: user.id }

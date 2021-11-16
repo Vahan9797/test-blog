@@ -4,5 +4,9 @@ Rails.application.routes.draw do
   namespace :api do
     post 'authenticate', to: 'authentication#authenticate'
     post 'register', to: 'registration#create_user'
+
+    resources :articles, only: [:index, :create, :update, :destroy] do
+      resources :comments, only: [:index, :create, :destroy]
+    end
   end
 end

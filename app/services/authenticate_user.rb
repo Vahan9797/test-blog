@@ -17,7 +17,6 @@ class AuthenticateUser
 
   def user
     begin
-      p "USER EMAIL: #{email}"
       user = User.find_by(email: email)
       return user if user && user.authenticate(password)
       nil
