@@ -7,6 +7,7 @@ class AuthenticateUser
   end
 
   def call
+    return user.token if user && user.token_expires_at > Time.now
     JsonWebToken.encode(email: user.email) if user
   end
 

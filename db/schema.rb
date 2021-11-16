@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_11_15_192720) do
+ActiveRecord::Schema.define(version: 2021_11_16_073354) do
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "citext"
   enable_extension "plpgsql"
 
   create_table "articles", force: :cascade do |t|
@@ -37,12 +38,13 @@ ActiveRecord::Schema.define(version: 2021_11_15_192720) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "email", null: false
+    t.citext "email", null: false
     t.string "password_digest", null: false
     t.string "token", default: ""
     t.datetime "token_expires_at", default: "2021-11-16 20:51:33"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
   end
 
   add_foreign_key "articles", "users"

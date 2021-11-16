@@ -7,6 +7,7 @@ class Api::AuthenticationController < ApplicationController
   
       if command.success?
         user = User.find_by(email: params[:email])
+        user.update!(token: command.result) if command.result != user.token
         render json: { email: user.email, auth_token: user.token, user_id: user.id }
       else
         render json: { error: command.errors }, status: :unauthorized

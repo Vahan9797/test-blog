@@ -22,6 +22,11 @@ class Api::RegistrationController < ApplicationController
 
   private
   def user_params
-    params.permit(:email, :password, :password_confirmation)
+    transformed_params = {}
+
+    params.permit(:email, :password, :password_confirmation).to_unsafe_h.map do |key, value|
+      transformed_params[key] = key == 'email' ? value.downcase : value
+    end
+    transformed_params
   end
 end
