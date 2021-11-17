@@ -4,11 +4,13 @@ class AuthenticateUser
   def initialize(email, password)
     @email = email
     @password = password
+    @user = nil
   end
 
   def call
-    return user.token if user && user.token_expires_at > Time.now
-    JsonWebToken.encode(email: user.email) if user
+    @user = user
+    return @user.token if @user && @user.token_expires_at > Time.now
+    JsonWebToken.encode(email: @user.email) if @user
   end
 
   private

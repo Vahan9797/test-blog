@@ -6,27 +6,26 @@ class AuthorizeApiRequest
   end
 
   def call
-    user
+    begin
+      User.find_by(email: @decoded_auth_token[:email]) if decoded_auth_token
+    rescue => e
+      raise e
+    end
   end
 
   private
 
   attr_reader :headers
 
-  def user
-    begin
-      return User.find_by(email: decoded_auth_token[:email]) if decoded_auth_token
-    rescue
-      { error: 'Invalid token.' }
-    end
-  end
-
   def decoded_auth_token
-    @decoded_auth_token ||= JsonWebToken.decode(http_auth_header)
+    begin
+      @decoded_auth_token ||= JsonWebToken.decode(http_auth_header)
+    rescue => e
+      raise e
+    end
   end
 
   def http_auth_header
     return headers['Authorization'].split(' ').last if headers['Authorization'].present?
-    raise 'Missing Authorization Token.'
   end
 end
