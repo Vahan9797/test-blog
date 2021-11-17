@@ -6,7 +6,7 @@ Rails.application.routes.draw do
     post 'register', to: 'registration#create_user'
 
     resources :articles, except: [:edit, :new] do
-      resources :comments, only: [:index, :create, :destroy]
+      resources :comments, only: [:index, :create, :show, :destroy]
     end
   end
 end
