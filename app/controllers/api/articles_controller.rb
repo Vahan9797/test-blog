@@ -16,14 +16,13 @@ class Api::ArticlesController < ApplicationController
       articles = Article.get_articles(where: where_hash, sort_by: sort_by, order: order)
 
       render json: { articles: articles }, status: :ok        
-
-      rescue => e
-        if e.is_a? ArgumentError
-          render json: { error: e.message }, status: :not_found
-        else
-          render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
-        end
+    rescue => e
+      if e.is_a? ArgumentError
+        render json: { error: e.message }, status: :not_found
+      else
+        render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
       end
+    end
   end
 
   def show
@@ -107,14 +106,12 @@ class Api::ArticlesController < ApplicationController
     case request_type
     when :index
       params.permit(:user_email, :category, :sort_by, :order)
-    when :show
+    when :show, :destroy
       params.permit(:id)
     when :create
       params.permit(:title, :body, :category, :published_date)
     when :update
       params.permit(:id, :title, :body, :category)
-    when :destroy
-      params.permit(:id)
     end
   end
 end
