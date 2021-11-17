@@ -5,7 +5,7 @@ Rails.application.routes.draw do
     post 'authenticate', to: 'authentication#authenticate'
     post 'register', to: 'registration#create_user'
 
-    resources :articles, only: [:index, :create, :update, :destroy] do
+    resources :articles, except: [:edit, :new] do
       resources :comments, only: [:index, :create, :destroy]
     end
   end
