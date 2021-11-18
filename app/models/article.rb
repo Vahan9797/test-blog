@@ -9,9 +9,9 @@ class Article < ApplicationRecord
   def self.get_articles(where: {}, sort_by: 'created_at', order: 'desc')
     begin
       articles = where.empty? ? Article.all : Article.where(where)
-      articles.left_outer_joins(:comments).select("title, substring(body for 500) || '...' AS body, published_date" +
+      articles.left_outer_joins(:comments).select("articles.id, title, substring(body for 500) || '...' AS body, published_date" +
         ", (SELECT COUNT(comments.*) FROM comments WHERE comments.article_id = articles.id) AS comments_count"
-      ).order("articles.#{sort_by} #{order}")
+    ).order("articles.#{sort_by} #{order}").uniq
     rescue => e
       raise e
     end

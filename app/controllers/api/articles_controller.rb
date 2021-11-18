@@ -1,8 +1,12 @@
 class Api::ArticlesController < ApplicationController
   def index
     begin
-      user_email, category, sort_by, order = *article_params
-
+      index_params = article_params
+      user_email = index_params[:user_email]
+      category = index_params[:category]
+      sort_by = index_params[:sort_by]
+      order = index_params[:order]
+      
       raise ArgumentError.new('[sort_by] must be of String type.') if !sort_by.nil? && !sort_by.is_a?(String)
       raise ArgumentError.new('[order] must be of String type.') if !order.nil? && !order.is_a?(String)
 
@@ -98,10 +102,15 @@ class Api::ArticlesController < ApplicationController
     p "PARAMS: #{params[:action]}"
     case params[:action].to_sym
     when :index
-      p "INSIDE index: #{params}"
-      #params.require(:article).permit(:user_email, :category, :sort_by, :order)
+      params.permit(:user_email, :category, :sort_by, :order)
+      index_params = {}
+      index_params[:user_email] = params[:user_email]
+      index_params[:category] = params[:category]
+      index_params[:sort_by] = params[:sort_by]
+      index_params[:order] = params[:order]
+      p index_params
+      index_params
     when :show, :destroy
-      p params
       params.require(:id)
     when :create
       p "in create params"
