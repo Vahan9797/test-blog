@@ -37,7 +37,7 @@ class Api::ArticlesController < ApplicationController
         creator: article.creator.email,
         published_date: article.published_date,
         comments_count: article.comments.count
-      }
+      }, status: :ok
     rescue => e
       if e.is_a? ActiveRecord::RecordNotFound
         render json: { error: 'No record found with given id.' }, status: :not_found
