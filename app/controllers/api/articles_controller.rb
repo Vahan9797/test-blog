@@ -27,7 +27,7 @@ class Api::ArticlesController < ApplicationController
 
   def show
     begin
-      article = Article.find_by(id: id)
+      article = Article.find_by(id: article_params)
       raise ActiveRecord::RecordNotFound if article.nil?
 
       render json: {
@@ -50,7 +50,7 @@ class Api::ArticlesController < ApplicationController
   def create
     begin
       article = @current_user.articles.create(article_params)
-      render json: { article: article }
+      render json: { article: article }, status: :created
     rescue => e
       if e.is_a? ActiveRecord::RecordInvalid
         render json: { error: e.message }, status: :unprocessable_entity
@@ -77,8 +77,7 @@ class Api::ArticlesController < ApplicationController
 
   def destroy
     begin
-      id = *article_params
-      raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: id)).nil?
+      raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: article_params)).nil?
       if @current_user.id == article.user_id
         article.destroy && (render json: { message: 'Article successfully deleted.' }, status: :ok)
       else
@@ -102,12 +101,15 @@ class Api::ArticlesController < ApplicationController
       p "INSIDE index: #{params}"
       #params.require(:article).permit(:user_email, :category, :sort_by, :order)
     when :show, :destroy
-      params.require(:article).permit(:id)
+      p params
+      params.require(:id)
     when :create
       p "in create params"
       params.require(:article).permit(:title, :body, :category, :published_date)
     when :update
-      params.require(:article).permit(:id, :title, :body, :category)
+      update_params = params.require(:article).permit(:title, :body, :category)
+      update_params[:id] = params.require(:id)
+      update_params
     end
   end
 end

@@ -1,8 +1,7 @@
 class Api::CommentsController < ApplicationController
   def index
     begin
-      article_id = *comment_params
-      raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: article_id)).nil?
+      raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: comment_params)).nil?
 
       render json: { comments: article.comments }, status: :ok
     rescue => e
@@ -29,9 +28,10 @@ class Api::CommentsController < ApplicationController
       article_id, text = *comment_params
       raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: article_id)).nil?
 
-      comment = article.comments.create_with(
-        text: text
-      ).find_or_create_by(article_id: article.id, user_id: @current_user.id)
+      comment = article.comments.create(
+        text: text.last,
+        user_id: @current_user.id
+      )
 
       render json: { comment: comment }, status: :created
     rescue => e
@@ -47,10 +47,10 @@ class Api::CommentsController < ApplicationController
         raise ActiveRecord::RecordNotFound
       end
 
-      if comment.author.id != current_user.id
+      if comment.author.id != @current_user.id
         render json: { error: 'Only author can delete his comment.' }, status: :forbidden
       else
-        comment.destroy && (render json: { message: 'Article successfully deleted.' }, status: :ok)
+        comment.destroy && (render json: { message: 'Comment successfully deleted.' }, status: :ok)
       end
     rescue => e
       rescue_exceptions(e)
@@ -62,11 +62,18 @@ class Api::CommentsController < ApplicationController
   def comment_params
     case params[:action].to_sym
     when :index
-      params.require(:comment).permit(:article_id)
+      params.require(:article_id)
     when :show, :destroy
-      params.require(:comment).permit(:article_id, :id)
+      p "PARAMS: #{params}"
+      {
+        article_id: params.require(:article_id),
+        id: params.require(:id)
+      }
     when :create
-      params.require(:comment).permit(:article_id, :text)
+      {
+        article_id: params.require(:article_id),
+        text: params.require(:text)
+      }
     end
   end
 
