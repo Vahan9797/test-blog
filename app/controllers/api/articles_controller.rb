@@ -1,7 +1,7 @@
 class Api::ArticlesController < ApplicationController
   def index
     begin
-      user_email, category, sort_by, order = *article_params(request_type: :index)
+      user_email, category, sort_by, order = *article_params
 
       raise ArgumentError.new('[sort_by] must be of String type.') if !sort_by.nil? && !sort_by.is_a?(String)
       raise ArgumentError.new('[order] must be of String type.') if !order.nil? && !order.is_a?(String)
@@ -49,14 +49,7 @@ class Api::ArticlesController < ApplicationController
 
   def create
     begin
-      title, body, category, published_date = *article_params(request_type: :create)
-      article = Article.create!(
-        title: title,
-        body: body,
-        category: category,
-        published_date: published_date,
-        user_id: current_user.id
-      )
+      article = @current_user.articles.create(article_params)
       render json: { article: article }
     rescue => e
       if e.is_a? ActiveRecord::RecordInvalid
@@ -69,7 +62,7 @@ class Api::ArticlesController < ApplicationController
 
   def update
     begin
-      update_params = article_params(request_type: :update)
+      update_params = article_params
       raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: update_params[:id])).nil?
 
       article.update!(update_params) && (render json: { article: article })
@@ -84,9 +77,9 @@ class Api::ArticlesController < ApplicationController
 
   def destroy
     begin
-      id = *article_params(request_type: :destroy)
+      id = *article_params
       raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: id)).nil?
-      if current_user.id == article.user_id
+      if @current_user.id == article.user_id
         article.destroy && (render json: { message: 'Article successfully deleted.' }, status: :ok)
       else
         render json: { error: 'Only author can delete this article.' }, status: :forbidden
@@ -102,16 +95,19 @@ class Api::ArticlesController < ApplicationController
 
   private
 
-  def article_params(request_type: :index)
-    case request_type
+  def article_params
+    p "PARAMS: #{params[:action]}"
+    case params[:action].to_sym
     when :index
-      params.permit(:user_email, :category, :sort_by, :order)
+      p "INSIDE index: #{params}"
+      #params.require(:article).permit(:user_email, :category, :sort_by, :order)
     when :show, :destroy
-      params.permit(:id)
+      params.require(:article).permit(:id)
     when :create
-      params.permit(:title, :body, :category, :published_date)
+      p "in create params"
+      params.require(:article).permit(:title, :body, :category, :published_date)
     when :update
-      params.permit(:id, :title, :body, :category)
+      params.require(:article).permit(:id, :title, :body, :category)
     end
   end
 end

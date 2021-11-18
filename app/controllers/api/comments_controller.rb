@@ -1,7 +1,7 @@
 class Api::CommentsController < ApplicationController
   def index
     begin
-      article_id = *comment_params(request_type: :index)
+      article_id = *comment_params
       raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: article_id)).nil?
 
       render json: { comments: article.comments }, status: :ok
@@ -12,7 +12,7 @@ class Api::CommentsController < ApplicationController
   
   def show
     begin
-      article_id, id = *comment_params(request_type: :show)
+      article_id, id = *comment_params
       
       if (article = Article.find_by(id: article_id)).nil? || (comment = article.comments.where(id: id).first).nil?
         raise ActiveRecord::RecordNotFound
@@ -26,13 +26,12 @@ class Api::CommentsController < ApplicationController
 
   def create
     begin
-      article_id, text = *comment_params(request_type: :create)
+      article_id, text = *comment_params
       raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: article_id)).nil?
 
-      comment = article.comments.create(
-        text: text,
-        user_id: current_user.id
-      )
+      comment = article.comments.create_with(
+        text: text
+      ).find_or_create_by(article_id: article.id, user_id: @current_user.id)
 
       render json: { comment: comment }, status: :created
     rescue => e
@@ -42,7 +41,7 @@ class Api::CommentsController < ApplicationController
 
   def destroy
     begin
-      article_id, id = *comment_params(request_type: :destroy)
+      article_id, id = *comment_params
 
       if (article = Article.find_by(id: article_id)).nil? || (comment = article.comments.where(id: id).first).nil?
         raise ActiveRecord::RecordNotFound
@@ -60,14 +59,14 @@ class Api::CommentsController < ApplicationController
 
   private
 
-  def comment_params(request_type: :index)
-    case request_type
+  def comment_params
+    case params[:action].to_sym
     when :index
-      params.permit(:article_id)
+      params.require(:comment).permit(:article_id)
     when :show, :destroy
-      params.permit(:article_id, :id)
+      params.require(:comment).permit(:article_id, :id)
     when :create
-      params.permit(:article_id, :text)
+      params.require(:comment).permit(:article_id, :text)
     end
   end
 
