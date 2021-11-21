@@ -19,6 +19,10 @@ gem 'jbuilder', '~> 2.7'
 gem 'bcrypt', '~> 3.1.16'
 gem 'jwt'
 gem 'simple_command'
+gem 'trailblazer'
+gem 'trailblazer-rails'
+gem 'searchkick'
+gem 'sidekiq'
 
 # Use Active Storage variant
 # gem 'image_processing', '~> 1.2'
