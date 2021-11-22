@@ -8,9 +8,10 @@ class AuthenticateUser
   end
 
   def call
-    @user = user
-    return @user.token if @user && @user.token_expires_at > Time.now
-    JsonWebToken.encode(email: @user.email) if @user
+    if !(@user = user).nil?
+      return @user.token if @user.token_expires_at > Time.now
+      JsonWebToken.encode(id: @user.id)
+    end
   end
 
   private
@@ -19,9 +20,7 @@ class AuthenticateUser
 
   def user
     begin
-      user = User.find_by(email: email)
-      return user if user && user.authenticate(password)
-      nil
+      user if (user = User.find_by(email: email)).authenticate(password)
     rescue
       { error: 'Invalid credentials.' }
     end

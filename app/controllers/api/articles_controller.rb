@@ -1,38 +1,26 @@
 class Api::ArticlesController < ApplicationController
   def index
     begin
-      index_params = article_params
-      user_email = index_params[:user_email]
-      category = index_params[:category]
-      sort_by = index_params[:sort_by]
-      order = index_params[:order]
+      user_email, category, sort_by, order = index_params
       
-      raise ArgumentError.new('[sort_by] must be of String type.') if !sort_by.nil? && !sort_by.is_a?(String)
-      raise ArgumentError.new('[order] must be of String type.') if !order.nil? && !order.is_a?(String)
-
-      where_hash = {}
-      where_hash[:user_id] = user.id if user_email.present? && !(user = User.find_by(email: user_email)).nil?
-      where_hash[:category] = category if category.present?
-
-      sort_by = 'created_at' unless ['title', 'body', 'category', 'published_date', 'created_at', 'updated_at'].include?(sort_by.try(:downcase))
-      order = 'desc' unless ['asc', 'desc'].include?(order.try(:downcase))
-
-      articles = Article.get_articles(where: where_hash, sort_by: sort_by, order: order)
+      articles = Article.get_articles(
+        sort_by: sort_by,
+        order: order,
+        where: {
+          user_email: user_email,
+          category: category
+        }
+      )
 
       render json: { articles: articles }, status: :ok        
     rescue => e
-      if e.is_a? ArgumentError
-        render json: { error: e.message }, status: :not_found
-      else
-        render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
-      end
+      render json: { error: "Something went wrong. See: #{e}" }
     end
   end
 
   def show
     begin
-      article = Article.find_by(id: article_params)
-      raise ActiveRecord::RecordNotFound if article.nil?
+      article = Article.find(id: params[:id])
 
       render json: {
         title: article.title,
@@ -53,72 +41,50 @@ class Api::ArticlesController < ApplicationController
 
   def create
     begin
-      article = @current_user.articles.create(article_params)
+      article = @current_user.articles.create(create_params)
       render json: { article: article }, status: :created
     rescue => e
-      if e.is_a? ActiveRecord::RecordInvalid
-        render json: { error: e.message }, status: :unprocessable_entity
-      else
-        render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
-      end
+      render json: { error: "Something went wrong. See: #{e}" }
     end
   end
 
   def update
     begin
-      update_params = article_params
-      raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: update_params[:id])).nil?
-
-      article.update!(update_params) && (render json: { article: article })
+      Article.update(params.require(:id), update_params) && (render json: { article: article })
     rescue => e
-      if e.is_a? ActiveRecord::RecordNotFound
-        render json: { error: 'No record found with given id.' }, status: :not_found
-      else
-        render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
-      end
+      render json: { error: "Something went wrong. See: #{e}" }
     end
   end
 
   def destroy
-    begin
-      raise ActiveRecord::RecordNotFound if (article = Article.find_by(id: article_params)).nil?
-      if @current_user.id == article.user_id
-        article.destroy && (render json: { message: 'Article successfully deleted.' }, status: :ok)
-      else
-        render json: { error: 'Only author can delete this article.' }, status: :forbidden
-      end
-    rescue => e
-      if e.is_a? ActiveRecord::RecordNotFound
-        render json: { error: 'No record found with given id.' }, status: :not_found
-      else
-        render json: { error: "Something went wrong. See: #{e}" }, status: :internal_server_error
-      end
+    if (article = Article.find_by(id: article_params)).nil?
+      render json: { error: 'No record found with given id.' }, status: :not_found
+    end
+
+    if @current_user.id == article.user_id
+      article.destroy && (render json: { message: 'Article successfully deleted.' }, status: :ok)
+    else
+      render json: { error: 'Only author can delete this article.' }, status: :forbidden
     end
   end
 
   private
 
-  def article_params
-    p "PARAMS: #{params[:action]}"
-    case params[:action].to_sym
-    when :index
-      params.permit(:user_email, :category, :sort_by, :order)
-      index_params = {}
-      index_params[:user_email] = params[:user_email]
-      index_params[:category] = params[:category]
-      index_params[:sort_by] = params[:sort_by]
-      index_params[:order] = params[:order]
-      p index_params
-      index_params
-    when :show, :destroy
-      params.require(:id)
-    when :create
-      p "in create params"
-      params.require(:article).permit(:title, :body, :category, :published_date)
-    when :update
-      update_params = params.require(:article).permit(:title, :body, :category)
-      update_params[:id] = params.require(:id)
-      update_params
-    end
+  def index_params
+    params.require(:articles).permit(:user_email, :category, :sort_by, :order).tap { |index_params|
+      index_params.require([:user_email, :category, :sort_by, :order])
+    }
+  end
+
+  def create_params
+    params.require(:article).permit(:title, :body, :category, :published_date).tap { |create_params|
+      create_params.require([:title, :body, :category])
+    }
+  end
+
+  def update_params
+    params.require(:article).permit(:title, :body, :category).tap { |update_params|
+      update_params.require([:title, :body, :category])
+    }
   end
 end
