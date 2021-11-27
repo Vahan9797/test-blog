@@ -4,7 +4,7 @@ class Api::AuthenticationController < ApplicationController
   def authenticate
     begin
       auth_params = user_params
-      command = AuthenticateUser.call(auth_params[:email], auth_params[:password])
+      command = AuthenticateUser.call(auth_params)
       
       if command.success?
         user = User.find_by!(email: auth_params[:email])
@@ -23,7 +23,7 @@ class Api::AuthenticationController < ApplicationController
   private
   def user_params
     params.require(:user).permit(:email, :password).tap do |user_params|
-      user_params.require([:email, :password])
+      user_params.require(%i[email password])
     end
   end
 end
