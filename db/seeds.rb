@@ -15,22 +15,24 @@
   )
 end
 
+first_user_id = User.first.try(:id) || 0
 last_user_id = User.last.try(:id) || 0
 
 # generate 10 random articles tied with random users
 10.times do
-  User.find(Random.new.rand(1..last_user_id)).articles.create(
+  User.find(Random.new.rand(first_user_id..last_user_id)).articles.create(
     title: Faker::Lorem.characters(number: 10),
     body: Faker::Lorem.paragraphs(number: 3, supplemental: true),
     category: Faker::Lorem.characters(number: 7)
   )
 end
 
+first_article_id = Article.first.try(:id) || 0
 last_article_id = Article.last.try(:id) || 0
 # generate 30 random comments on different articles with created users
 30.times do
-  Article.find(Random.new.rand(1..last_article_id)).comments.create(
+  Article.find(Random.new.rand(first_article_id..last_article_id)).comments.create(
     text: Faker::Lorem.sentences(number: 2),
-    user_id: Random.new.rand(1..last_user_id)
+    user_id: Random.new.rand(first_user_id..last_user_id)
   )
 end

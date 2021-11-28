@@ -1,17 +1,13 @@
 class Api::ArticlesController < ApplicationController
   def index
-    user_email, category, sort_by, order = index_params
-    
-    articles = Article.get_articles(
-      sort_by: sort_by,
-      order: order,
-      where: {
-        user_email: user_email,
-        category: category
-      }
-    )
+    sorting_hash = { where: {} }
+    sorting_hash[:where][:user_id] = User.find_by!(email: params[:user_email]).id if params[:user_email].present?
+    sorting_hash[:where][:category] = params[:category] if params[:category].present?
+    sorting_hash[:sort_by] = params[:sort_by] if params[:sort_by].present?
+    sorting_hash[:order] = params[:order] if params[:order].present?
+    articles = Article.get_articles(**sorting_hash)
 
-    render json: { articles: articles }, status: :ok        
+    render json: { articles: articles }, status: :ok
   rescue => e
     rescue_exceptions(e)
   end
@@ -55,12 +51,6 @@ class Api::ArticlesController < ApplicationController
   end
 
   private
-
-  def index_params
-    params.require(:articles).permit(:user_email, :category, :sort_by, :order).tap { |index_params|
-      index_params.require([:user_email, :category, :sort_by, :order])
-    }
-  end
 
   def create_params
     params.require(:article).permit(:title, :body, :category, :published_date).tap { |create_params|

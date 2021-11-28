@@ -2,16 +2,17 @@ class AuthenticateUser
   prepend SimpleCommand
 
   def initialize(params)
+    p "PARAMS: #{params}"
     @email = params[:email]
     @password = params[:password]
     @user = nil
   end
 
   def call
-    if !(@user = user).nil?
-      return @user.token if @user.token_expires_at > Time.now
-      JsonWebToken.encode(id: @user.id)
-    end
+    user
+    return @user.token if @user.token_expires_at > Time.now
+
+    JsonWebToken.encode(id: @user.id)
   end
 
   private
@@ -19,10 +20,9 @@ class AuthenticateUser
   attr_accessor :email, :password
 
   def user
-    begin
-      user if (user = User.find_by(email: email)).authenticate(password)
-    rescue
-      { error: 'Invalid credentials.' }
-    end
+    p "IN USER: #{email} #{password}"
+    @user if (@user = User.find_by(email: email)).authenticate(password)
+  rescue
+    { error: 'Invalid credentials.' }
   end
 end
